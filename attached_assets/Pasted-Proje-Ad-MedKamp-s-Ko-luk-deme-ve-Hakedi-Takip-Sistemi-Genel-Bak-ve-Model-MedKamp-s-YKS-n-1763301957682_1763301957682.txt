@@ -1,0 +1,189 @@
+Proje Adı: MedKampüs Koçluk - Ödeme ve Hakediş Takip Sistemi
+Genel Bakış ve Model
+MedKampüs, YKS (Üniversite Sınavı) koçluğu sunan bir platformdur. Öğrenciler, YKS sürecini başarıyla deneyimlemiş (tıp, mühendislik, hukuk vb.) üniversite öğrencilerinden koçlarını kendileri seçerler. Modelimiz PDR (Psikolojik Danışmanlık ve Rehberlik) değil, tamamen ‘deneyimle gelen akran koçluğu’ üzerine kuruludur.
+
+Bu sistem, bu modelin finansal akışını (öğrenci ödemeleri ve koç hakedişleri) yönetmek için tasarlanmıştır.
+
+1) Temel İş Modeli ve Finansal Akış
+İş modeli, öğrenci peşin ödemesi ve koça aylık sabit hakediş üzerine kuruludur:
+
+Öğrenci Ödemesi: Öğrenci 1, 2, 3, 4, 5 veya 6 aylık koçluk paketlerinden birini seçer ve paketin tüm ücretini MedKampüs'e peşin olarak öder.
+
+Koç Hakedişi: Koçlar, platformdaki her bir aktif öğrencisi için aylık sabit bir ücret (örneğin 1100 TL) hak eder. Bu ücret, öğrencinin ödediği paket fiyatından bağımsızdır.
+
+MedKampüs Komisyonu: MedKampüs'ün geliri, öğrenciden alınan toplam peşin paket ücreti ile koçlara ödenen toplam aylık hakedişler arasındaki farktır.
+
+2) Global Sistem Ayarları (Admin Tarafından Düzenlenebilir Olmalı)
+Sistemin esnek olması için bu iki temel parametre yönetici panelinden değiştirilebilmelidir:
+
+Koç Aylık Sabit Hakediş Ücreti: (Varsayılan: 1100 TL). Bu, bir koçun bir öğrenci için alacağı tam aylık brüt ücrettir. (Düzeltme 2)
+
+Global Koç Ödeme Günü: (Varsayılan: Her ayın 28'i). Bu, MedKampüs'ün tüm koçlara toplu ödemelerini yapacağı sabit tarihtir. (Düzeltme 1)
+
+3) Paket Yapısı ve Öğrenci Ödeme Takibi
+Bu bölüm, öğrencinin paket yenileme takibine odaklanır.
+
+Paketler: 1, 2, 3, 4, 5 ve 6 aylık.
+
+Satın Alma: Öğrenci bir paket satın aldığında (örn: 18 Şubat'ta 3 aylık paket), sisteme Başlangıç Tarihi (18 Şubat) ve Paket Süresi (3 Ay) girilir.
+
+Otomatik Hesaplama: Sistem, Paket Bitiş Tarihi'ni otomatik olarak hesaplamalıdır. (Örn: 18 Mayıs).
+
+Ödeme Takibi (Yenileme): (Düzeltme 3)
+
+Sistem, öğrenciden her ay ödeme istemez.
+
+Sistemin görevi, Paket Bitiş Tarihi yaklaştığında (örn: son 7 gün) yönetici paneline "Yaklaşan Paket Yenilemeleri" uyarısı düşürmektir.
+
+Paket bittiğinde ve öğrenci yenileme yapmadığında, "Geciken Paket Yenilemeleri" listesine düşer.
+
+4) Koç Hakediş Hesaplama Sistemi (Kıstelyevm Mantığı)
+Bu, sistemin en kritik parçasıdır. Sistem, "Global Koç Ödeme Günü"nde (örn: ayın 28'i) her bir koçun toplam hakedişini hesaplamalıdır. (Düzeltme 5)
+
+Hesaplama, her bir öğrenci için kıstelyevm (prorated) mantığıyla yapılır:
+
+Varsayılan Ay: Hesaplamalarda 1 ay = 30 gün olarak baz alınacaktır.
+
+Aylık Hakediş: Koç Aylık Sabit Hakediş Ücreti (Örn: 1100 TL).
+
+Günlük Hakediş: (Aylık Hakediş / 30).
+
+Hesaplama Senaryoları (Ödeme Günü: Ayın 28'i):
+
+Tam Ay Alan Öğrenci:
+
+Koçun 28 Ekim - 28 Kasım arasında tam ay boyunca aktif olan öğrencisi için koç 1100 TL (tam ücret) hak eder.
+
+Yeni Başlayan Öğrenci (Kıstelyevm): (Düzeltme 1)
+
+Öğrenci 18 Kasım'da başladı.
+
+Ödeme günü 28 Kasım.
+
+Koçun bu öğrenci için hak ettiği gün sayısı: 28 Kasım - 18 Kasım = 10 gün.
+
+Hesaplanacak Hakediş: (1100 TL / 30) * 10 Gün = 366.67 TL.
+
+Paketi Biten Öğrenci (Kıstelyevm):
+
+Öğrencinin paketi 10 Kasım'da bitti (ve yenilemedi).
+
+Bir önceki ödeme günü 28 Ekim'di.
+
+Koçun bu öğrenci için hak ettiği gün sayısı: 28 Ekim - 10 Kasım arası = 13 gün.
+
+Hesaplanacak Hakediş: (1100 TL / 30) * 13 Gün = 476.67 TL.
+
+5) Veri Yönetimi (Ekleme/Çıkarma İhtiyacı) (Düzeltme 4)
+Sistemde temel CRUD (Oluştur, Oku, Güncelle, Sil) işlemleri olmalıdır:
+
+Koç Yönetimi:
+
+Yeni koç ekleyebilme.
+
+Koç bilgilerini düzenleyebilme.
+
+Bir koçu sistemden "Arşivle" veya "Sil" (Artık platformda çalışmıyorsa).
+
+Öğrenci Yönetimi:
+
+Yeni öğrenci ekleyebilme (Ad, Koç ataması, Paket bilgisi).
+
+Öğrenci paketini/bilgilerini düzenleyebilme.
+
+Bir öğrenciyi sistemden "Arşivle" veya "Sil" (Ödeme yapmıyor, ayrıldı vb.).
+
+Silinen/Arşivlenen öğrenci, koç hakediş hesaplamalarından çıkarılmalıdır.
+
+6) Sistemsel Gereksinimler ve Panel Özellikleri
+A) Yönetici Paneli (Admin Dashboard)
+Bu panel tüm sistemin beynidir.
+
+Ana Gösterge Paneli:
+
+Aktif Koç Sayısı
+
+Aktif Öğrenci Sayısı
+
+Bu Ay Beklenen Toplam Koç Ödemesi
+
+Bu Ayki Toplam MedKampüs Komisyonu (Yaklaşık)
+
+Öğrenci Takip Modülü: (Düzeltme 3)
+
+"Paket Yenilemesi Yaklaşanlar" (Son 7 gün)
+
+"Paketi Biten / Geciken Öğrenciler"
+
+Koç Hakediş Modülü (En Önemli): (Düzeltme 5)
+
+"Global Koç Ödeme Günü" geldiğinde (örn: 28 Kasım), bu modül otomatik olarak koç bazlı bir hakediş tablosu oluşturmalıdır:
+
+Tablo: [Koç Adı] | [Aktif Öğrenci Sayısı] | [BU AYKİ TOPLAM HAKEDİŞ (TL)]
+
+Detay Gösterimi: Bir koçun ismine tıklandığında, o toplam tutarın dökümü görünmelidir:
+
+Örnek: Koç Ali Veli - Toplam Hakediş: 2643.34 TL
+
+Öğrenci A (Ayşe Y.): 1100.00 TL (Tam Ay)
+
+Öğrenci B (Burak C.): 1100.00 TL (Tam Ay)
+
+Öğrenci C (Cem K.): 443.34 TL (Kıstelyevm - 12 Gün)
+
+Yönetim Modülleri: (Düzeltme 4)
+
+Koç Ekle / Düzenle / Sil
+
+Öğrenci Ekle / Düzenle / Sil
+
+Ayarlar Modülü: (Düzeltme 2)
+
+Koç Aylık Sabit Hakediş Ücreti'ni düzenleme alanı.
+
+Global Koç Ödeme Günü'nü düzenleme alanı.
+
+B) Koç Paneli (Basitleştirilmiş)
+Koçun para onayı yapmasına gerek yoktur, çünkü ödemeyi MedKampüs'ten toplu alır.
+
+Ana Ekran:
+
+"Mevcut Aktif Öğrencilerim" Listesi
+
+Her öğrencinin Paket Bitiş Tarihi (Koçun da takibi için)
+
+Hakediş Geçmişi:
+
+"Aldığım Ödemeler" Raporu (Geçmişe dönük: Kasım 2025 - 2643.34 TL, Ekim 2025 - 2200.00 TL vb.)
+
+C) Öğrenci Kayıt Kartı (Veritabanı Alanları)
+Bir öğrenci eklendiğinde/düzenlendiğinde ihtiyaç duyulan alanlar:
+
+Öğrenci Adı Soyadı
+
+Atandığı Koç (Listeden seçilmeli)
+
+Satın Alınan Paket (Dropdown: 1-6 Ay)
+
+Paket Başlangıç Tarihi (Tarih seçici)
+
+Paket Bitiş Tarihi (Otomatik hesaplanmalı)
+
+Paket Durumu (Otomatik: Aktif / Bitiyor / Bitti)
+
+(Not: Komisyon, koça düşen tutar gibi alanlara öğrenci kartında gerek yoktur. Bu hesaplama global ayarlara göre anlık yapılır.)
+
+Özet – Yeni Çalışma Mantığı
+Öğrenci: 3 aylık paketi alır, ücreti peşin öder.
+
+Sistem: Öğrencinin Paket Bitiş Tarihi'ni (3 ay sonrası) kaydeder.
+
+Sistem: Bitiş tarihi yaklaştığında Admin'e "Paket Yenile" uyarısı verir.
+
+Admin: "Global Koç Ödeme Günü"nde (örn: ayın 28'i) panele girer.
+
+Sistem: Admin'e "Koç A: 2643 TL, Koç B: 4400 TL" şeklinde, tüm kıstelyevm hesapları yapılmış net bir ödeme listesi sunar.
+
+Admin: Bu listeye göre koçlara manuel ödemeleri yapar.
+
+Admin: Gerektiğinde ayrılan koçları veya ödeme yapmayan öğrencileri sistemden silebilir.
